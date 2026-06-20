@@ -748,6 +748,10 @@ def main():
                     "stand_vocab": stand_vocab,
                     "throws_vocab": throws_vocab,
                     "numeric_cols": NUMERIC_COLS,
+
+                    "scaler_mean": scaler.mean_.astype(float).tolist(),
+                    "scaler_scale": scaler.scale_.astype(float).tolist(),
+
                     "best_metric": BEST_METRIC,
                     "best_score": best_score,
                     "best_epoch": best_epoch,
@@ -764,6 +768,8 @@ def main():
                 },
                 MODEL_PATH,
             )
+
+
 
     pd.DataFrame(history).to_csv(HISTORY_PATH, index=False, encoding="utf-8-sig")
 

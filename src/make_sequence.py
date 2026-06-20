@@ -12,7 +12,7 @@ ZONE_PAD = "ZPAD"
 # 보고서에 "희귀 구종은 OTHER로 통합"이라고 쓰면 됨
 MIN_TARGET_COUNT = 500
 GROUP_RARE_PITCHES = True
-FORCE_OTHER_PITCHES = {"CS", "EP", "FA", "FO", "KN", "PO", "SC", "SV"} 
+FORCE_OTHER_PITCHES = {"CS", "EP", "FA", "FO", "KN", "PO", "SC", "SV", "UN"} 
 
 
 def zone_to_token(x):
@@ -133,17 +133,29 @@ def main():
 
             samples.append(sample)
 
+    # samples 리스트를 DataFrame으로 변환
     seq_df = pd.DataFrame(samples)
+
+    if seq_df.empty:
+        raise ValueError("생성된 시퀀스 데이터가 없습니다. 입력 데이터와 그룹 구성 로직을 확인하세요.")
+
+    # 날짜/경기/타석/투구 순서 정렬
+    seq_df = seq_df.sort_values(
+        ["game_date", "game_pk", "at_bat_number", "pitch_number"]
+    ).reset_index(drop=True)
 
     print("===== 희귀 구종 처리 전 target 분포 =====")
     print(seq_df["target_pitch_type"].value_counts().head(30))
 
     if GROUP_RARE_PITCHES:
-        counts = seq_df["target_pitch_type"].value_counts()
-        rare_set = set(counts[counts < MIN_TARGET_COUNT].index)
+        # train 기준으로 희귀 구종 결정
+        train_end = int(len(seq_df) * 0.7)
+        train_counts = seq_df.iloc[:train_end]["target_pitch_type"].value_counts()
+
+        rare_set = set(train_counts[train_counts < MIN_TARGET_COUNT].index)
         rare_set = rare_set.union(FORCE_OTHER_PITCHES)
 
-        print("\n===== OTHER로 묶을 희귀 구종 =====")
+        print("\n===== OTHER로 묶을 희귀 구종, train 기준 =====")
         print(sorted(rare_set))
 
         seq_df["target_pitch_type_original"] = seq_df["target_pitch_type"]

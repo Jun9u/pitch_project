@@ -45,7 +45,7 @@ USE_COLS = [
     "bat_score_diff",
 ]
 
-FORCE_OTHER_PITCHES = {"CS", "EP", "FA", "FO", "KN", "PO", "SC", "SV"}
+FORCE_OTHER_PITCHES = {"CS", "EP", "FA", "FO", "KN", "PO", "SC", "SV", "UN"}
 
 def zone_to_token(x):
     if pd.isna(x):

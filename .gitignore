@@ -4,7 +4,7 @@ data/processed/
 *.parquet
 *.pkl
 
-# raw csv는 기본 무시
+# raw csv 기본 무시
 *.csv
 
 # model files
@@ -12,11 +12,12 @@ models/
 *.pt
 *.pth
 *.ckpt
+*.pkl
 
 # outputs 기본 무시
 outputs/*
 
-# 단, 제출/리뷰용 요약 결과는 추적
+# 단, 제출/리뷰용 요약 결과는 허용
 !outputs/baseline_results.csv
 !outputs/lstm_weighted_macro_result.csv
 !outputs/outcome_empirical_eval.csv
