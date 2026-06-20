@@ -326,10 +326,8 @@ def main():
         # 중복 제거 + OTHER 제외
         candidate_pitches = []
 
+        # 1. LSTM Top-3
         for p in lstm_candidates:
-            if pd.isna(p):
-                continue
-
             p = str(p).strip()
 
             if p in ["", "nan", "None", "OTHER"]:
@@ -338,20 +336,19 @@ def main():
             if p not in candidate_pitches:
                 candidate_pitches.append(p)
 
-        # LSTM 후보가 전부 OTHER이거나 비어 있으면 투수별 top pitch로 대체
-        if not candidate_pitches:
-            fallback_candidates = pitcher_top_pitches.get(row["pitcher"], global_top_pitches)
+        # 2. 해당 투수의 자주 던지는 구종 Top-3 추가
+        fallback_candidates = pitcher_top_pitches.get(row["pitcher"], [])
 
-            for p in fallback_candidates:
-                p = str(p).strip()
+        for p in fallback_candidates:
+            p = str(p).strip()
 
-                if p in ["", "nan", "None", "OTHER"]:
-                    continue
+            if p in ["", "nan", "None", "OTHER"]:
+                continue
 
-                if p not in candidate_pitches:
-                    candidate_pitches.append(p)
+            if p not in candidate_pitches:
+                candidate_pitches.append(p)
 
-        # 그래도 비어 있으면 전체 top pitch 사용
+        # 3. 그래도 비면 전체 top pitch 사용
         if not candidate_pitches:
             for p in global_top_pitches:
                 p = str(p).strip()
@@ -425,7 +422,7 @@ def main():
             )
 
             out["actual_action_pred_delta_run_exp"] = actual_score
-            out["expected_improvement_vs_actual_action"] = (
+            out["predicted_improvement_vs_actual_action"] = (
                 actual_score - best["pred_delta_run_exp"]
             )
 
@@ -450,7 +447,7 @@ def main():
         "actual_pitch_type",
         "actual_zone",
         "actual_delta_run_exp",
-        "expected_improvement_vs_actual_action",
+        "predicted_improvement_vs_actual_action",
         "rec_1",
         "rec_2",
         "rec_3",
