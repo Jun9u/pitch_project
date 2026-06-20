@@ -1,6 +1,7 @@
 from pathlib import Path
 import pandas as pd
-from pybaseball import statcast
+from pybaseball import statcast, cache
+
 
 
 # =========================
@@ -17,6 +18,7 @@ RAW_DIR.mkdir(parents=True, exist_ok=True)
 MODEL_COLS = [
     "game_date",
     "game_pk",
+    "game_type",
     "at_bat_number",
     "pitch_number",
     "pitcher",
@@ -99,10 +101,22 @@ def print_col_status(cols, target_cols, title):
 
 
 def main():
+    
+    cache.enable()
     print("===== Statcast 데이터 다운로드 =====")
     print("기간:", START_DATE, "~", END_DATE)
 
     df = statcast(START_DATE, END_DATE)
+
+    if "game_type" in df.columns:
+        print("\n===== game_type 분포 =====")
+        print(df["game_type"].value_counts(dropna=False))
+
+        # 정규시즌만 사용할 경우
+        df = df[df["game_type"] == "R"].copy()
+
+    print("\n===== 정규시즌 필터링 후 크기 =====")
+    print(df.shape)
 
     print("\n===== 원본 데이터 크기 =====")
     print(df.shape)
