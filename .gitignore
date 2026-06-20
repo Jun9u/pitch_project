@@ -1,9 +1,11 @@
 # data
 data/raw/
 data/processed/
-*.csv
 *.parquet
 *.pkl
+
+# raw csv는 기본 무시
+*.csv
 
 # model files
 models/
@@ -11,8 +13,14 @@ models/
 *.pth
 *.ckpt
 
-# outputs
-outputs/
+# outputs 기본 무시
+outputs/*
+
+# 단, 제출/리뷰용 요약 결과는 추적
+!outputs/baseline_results.csv
+!outputs/lstm_weighted_macro_result.csv
+!outputs/outcome_empirical_eval.csv
+!outputs/outcome_recommendation_sample.csv
 
 # python
 .venv/

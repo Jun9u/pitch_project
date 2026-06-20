@@ -12,6 +12,7 @@ ZONE_PAD = "ZPAD"
 # 보고서에 "희귀 구종은 OTHER로 통합"이라고 쓰면 됨
 MIN_TARGET_COUNT = 500
 GROUP_RARE_PITCHES = True
+FORCE_OTHER_PITCHES = {"CS", "EP", "FA", "FO", "KN", "PO", "SC", "SV"} 
 
 
 def zone_to_token(x):
@@ -139,11 +140,7 @@ def main():
 
     if GROUP_RARE_PITCHES:
         counts = seq_df["target_pitch_type"].value_counts()
-        if GROUP_RARE_PITCHES:
-            rare_set = set(counts[counts < MIN_TARGET_COUNT].index)
-        else:
-            rare_set = set()
-        
+        rare_set = set(counts[counts < MIN_TARGET_COUNT].index)
         rare_set = rare_set.union(FORCE_OTHER_PITCHES)
 
         print("\n===== OTHER로 묶을 희귀 구종 =====")

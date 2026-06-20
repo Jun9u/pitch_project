@@ -7,8 +7,8 @@ from pybaseball import statcast
 # 설정
 # =========================
 
-START_DATE = "2024-03-20"
-END_DATE = "2024-04-30"
+START_DATE = "2023-03-01"
+END_DATE = "2025-09-27"
 
 RAW_DIR = Path("data/raw")
 RAW_DIR.mkdir(parents=True, exist_ok=True)

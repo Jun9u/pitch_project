@@ -1,0 +1,2 @@
+﻿model,experiment_name,best_epoch,best_metric,best_valid_score,use_class_weights,device,n_epochs,batch_size,learning_rate,total_time_sec,trainable_parameters,loss,accuracy,top3_accuracy,macro_f1,weighted_f1
+LSTM,lstm_weighted_macro,8,macro_f1,0.4127130346579473,True,cpu,8,512,0.001,1627.0905,104570,1.5602606863211808,0.38958422554241284,0.8352584943330901,0.3972174258111192,0.38896211173920336
