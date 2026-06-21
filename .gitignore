@@ -22,6 +22,7 @@ outputs/*
 !outputs/lstm_weighted_macro_result.csv
 !outputs/outcome_empirical_eval.csv
 !outputs/outcome_recommendation_sample.csv
+!outputs/transformer_weighted_macro_result.csv
 
 # python
 .venv/
@@ -35,3 +36,9 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .vscode/
+# Virtual environments
+.venv/
+.venv_check/
+venv/
+__pycache__/
+*.pyc

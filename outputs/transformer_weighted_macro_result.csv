@@ -1,0 +1,2 @@
+﻿model,experiment_name,best_epoch,best_metric,best_valid_score,use_class_weights,device,n_epochs,batch_size,learning_rate,total_time_sec,trainable_parameters,loss,accuracy,top3_accuracy,macro_f1,weighted_f1
+TransformerEncoder,transformer_weighted_macro,7,macro_f1,0.4045119339455189,True,cpu,8,512,0.001,2269.3083,117370,1.6026857856454826,0.37224872879055654,0.8293201517609945,0.38955408256214236,0.36907227462269887
