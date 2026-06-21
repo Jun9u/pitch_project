@@ -1,5 +1,7 @@
+fastapi==0.138.0
 numpy==2.4.6
 pandas==3.0.3
 pybaseball==2.2.7
+pydantic==2.13.4
 scikit_learn==1.9.0
 torch==2.12.1
