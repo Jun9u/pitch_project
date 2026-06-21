@@ -1,813 +1,1306 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>구종·위치 추천 시스템</title>
-
-  <style>
-    :root {
-      --bg-1: #0f172a;
-      --bg-2: #111827;
-      --card: #ffffff;
-      --card-soft: #f8fafc;
-      --line: #e5e7eb;
-      --text: #111827;
-      --muted: #64748b;
-
-      --primary: #2563eb;
-      --primary-soft: #dbeafe;
-      --primary-dark: #1d4ed8;
-
-      --yellow-zone: #f3e7b3;
-      --yellow-zone-border: #c8aa45;
-      --green-zone: #c8e6d2;
-      --green-zone-border: #6ea783;
-
-      --recommend: #3b82f6;
-      --compare: #d97706;
-
-      --good: #059669;
-      --bad: #dc2626;
-      --neutral: #64748b;
-
-      --shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
-    }
-
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      min-height: 100vh;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
-      background:
-        radial-gradient(circle at top left, rgba(59, 130, 246, 0.22), transparent 28%),
-        linear-gradient(135deg, #0f172a 0%, #111827 45%, #1e293b 100%);
-      color: var(--text);
-    }
-
-    .page {
-      max-width: 980px;
-      margin: 0 auto;
-      padding: 28px 20px 48px;
-    }
-
-    .hero { color: white; margin-bottom: 22px; }
-
-    .hero-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 34px;
-      letter-spacing: -0.05em;
-    }
-
-    .subtitle {
-      margin-top: 10px;
-      color: #dbeafe;
-      line-height: 1.6;
-      font-size: 15px;
-    }
-
-    .badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 16px;
-    }
-
-    .badge {
-      padding: 7px 11px;
-      border-radius: 999px;
-      background: rgba(255, 255, 255, 0.1);
-      color: #e5e7eb;
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      font-size: 13px;
-      font-weight: 700;
-    }
-
-    .status-card {
-      width: 270px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.16);
-      border-radius: 18px;
-      padding: 15px;
-      color: #e5e7eb;
-      backdrop-filter: blur(10px);
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .status-card strong {
-      display: block;
-      color: #93c5fd;
-      margin-bottom: 6px;
-    }
-
-    .main-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr);
-      gap: 18px;
-      align-items: start;
-    }
-
-    .panel {
-      background: var(--card);
-      border: 1px solid rgba(226, 232, 240, 0.9);
-      border-radius: 20px;
-      box-shadow: var(--shadow);
-      overflow: hidden;
-      min-width: 0;
-    }
-
-    .panel-header {
-      padding: 18px 20px;
-      border-bottom: 1px solid var(--line);
-      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-    }
-
-    .panel-header h2 {
-      margin: 0;
-      font-size: 18px;
-      letter-spacing: -0.03em;
-    }
-
-    .panel-header p {
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-
-    .panel-body { padding: 18px 20px 20px; }
-
-    .field-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-    }
-
-    .field-grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      min-width: 0;
-    }
-
-    .field label {
-      font-size: 12px;
-      font-weight: 800;
-      color: #374151;
-    }
-
-    .field small {
-      font-size: 11px;
-      color: var(--muted);
-      line-height: 1.35;
-    }
-
-    input, select {
-      width: 100%;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 9px 10px;
-      font-size: 14px;
-      background: white;
-      outline: none;
-    }
-
-    input:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
-    }
-
-    .section-divider { height: 1px; background: var(--line); margin: 18px 0; }
-
-    .info-box {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      padding: 12px;
-      color: #475569;
-      font-size: 13px;
-      line-height: 1.55;
-    }
-
-    .info-box.warn {
-      background: #fffbeb;
-      border-color: #fcd34d;
-      color: #78350f;
-    }
-
-    .button-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 16px;
-    }
-
-    button {
-      border: none;
-      border-radius: 12px;
-      padding: 11px 14px;
-      font-weight: 900;
-      cursor: pointer;
-      transition: 0.15s ease;
-      font-size: 14px;
-    }
-
-    .btn-primary { background: var(--primary); color: white; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22); }
-    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
-    .btn-secondary { background: #e5e7eb; color: #111827; }
-    .btn-secondary:hover { background: #d1d5db; }
-    .btn-ghost { background: white; border: 1px solid #cbd5e1; color: #374151; }
-    .btn-ghost:hover { background: #f1f5f9; }
-
-    .message {
-      display: none;
-      margin-top: 12px;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 13px;
-    }
-    .message.show { display: block; }
-    .message.ok { background: #ecfdf5; border: 1px solid #bbf7d0; color: #065f46; }
-    .message.error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
-
-    .pitch-checks { display: flex; flex-wrap: wrap; gap: 8px; }
-
-    .pitch-check {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 7px 9px;
-      border-radius: 999px;
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      color: #334155;
-    }
-
-    .pitch-check input { width: auto; }
-
-    .zone-meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
-      color: var(--muted);
-      font-size: 13px;
-    }
-
-    .active-target {
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-weight: 900;
-      border: 1px solid #bfdbfe;
-    }
-
-    .matchup-field {
-      display: grid;
-      grid-template-columns: 96px minmax(0, 1fr) 96px;
-      grid-template-rows: auto auto;
-      gap: 12px 14px;
-      align-items: center;
-      justify-items: center;
-      width: 100%;
-      overflow: hidden;
-    }
-
-    .batter-slot, .pitcher-slot {
-      width: 90px;
-      min-height: 178px;
-      border: 1px solid #dbeafe;
-      border-radius: 18px;
-      background: #f8fafc;
-      color: #64748b;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      opacity: 0.34;
-      transition: 0.16s ease;
-    }
-
-    .batter-slot.active {
-      opacity: 1;
-      background: linear-gradient(180deg, #fff7ed, #ffffff);
-      border-color: #fb923c;
-      box-shadow: 0 12px 22px rgba(249, 115, 22, 0.16);
-    }
-
-    .pitcher-slot.active {
-      opacity: 1;
-      background: linear-gradient(180deg, #eff6ff, #ffffff);
-      border-color: #60a5fa;
-      box-shadow: 0 12px 22px rgba(37, 99, 235, 0.16);
-    }
-
-    .slot-label {
-      font-size: 12px;
-      font-weight: 900;
-      color: #475569;
-    }
-
-    .plate-zone-wrap {
-      width: 100%;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      grid-column: 2;
-      grid-row: 1;
-    }
-
-    .zone-board-wrap {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      padding: 12px;
-      border-radius: 20px;
-      background: linear-gradient(180deg, #f8fafc, #eef2ff);
-      border: 1px solid #dbeafe;
-      overflow: hidden;
-    }
-
-    .zone-board {
-      position: relative;
-      width: min(100%, 430px);
-      aspect-ratio: 1 / 1;
-      border-radius: 18px;
-      background: #eef6ff;
-      border: 2px solid #64748b;
-      overflow: hidden;
-      box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.1), 0 12px 24px rgba(15, 23, 42, 0.1);
-    }
-
-    .zone-board::before, .zone-board::after {
-      content: "";
-      position: absolute;
-      background: rgba(15, 23, 42, 0.18);
-      z-index: 1;
-    }
-    .zone-board::before { width: 1px; height: 100%; left: 50%; top: 0; }
-    .zone-board::after { height: 1px; width: 100%; left: 0; top: 50%; }
-
-    .zone-cell {
-      position: absolute;
-      border: 1.5px solid rgba(51, 65, 85, 0.35);
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      user-select: none;
-      font-weight: 900;
-      transition: 0.14s ease;
-    }
-
-    .zone-cell.outside { background: rgba(200, 230, 210, 0.92); color: #064e3b; border-color: var(--green-zone-border); z-index: 1; }
-    .zone-cell.inside { background: rgba(243, 231, 179, 0.96); color: #713f12; border-color: var(--yellow-zone-border); z-index: 3; }
-
-    .zone-cell.corner-tl { align-items: flex-start; justify-content: flex-start; padding: 22px; }
-    .zone-cell.corner-tr { align-items: flex-end; justify-content: flex-start; padding: 22px; }
-    .zone-cell.corner-bl { align-items: flex-start; justify-content: flex-end; padding: 22px; }
-    .zone-cell.corner-br { align-items: flex-end; justify-content: flex-end; padding: 22px; }
-
-    .zone-cell:hover { filter: brightness(1.04); transform: translateY(-1px); }
-    .zone-cell.active { background: #dbeafe; border-color: var(--primary); box-shadow: inset 0 0 0 4px rgba(37, 99, 235, 0.24); }
-    .zone-cell.recommended { background: #bfdbfe; border-color: var(--recommend); box-shadow: inset 0 0 0 4px rgba(37, 99, 235, 0.28); }
-    .zone-cell.compare { background: #fde68a; border-color: var(--compare); box-shadow: inset 0 0 0 4px rgba(217, 119, 6, 0.25); }
-    .zone-cell.both { background: linear-gradient(135deg, #bfdbfe 0%, #fde68a 100%); border-color: #14b8a6; box-shadow: inset 0 0 0 4px rgba(20, 184, 166, 0.24); }
-
-    .zone-label { font-size: 19px; line-height: 1; letter-spacing: -0.03em; }
-    .zone-sub { font-size: 11px; color: #334155; font-weight: 800; }
-
-    .home-plate {
-      width: 94px;
-      height: 48px;
-      margin-top: 10px;
-      background: #f8fafc;
-      border: 2px solid #64748b;
-      clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-    }
-
-    .pitcher-row {
-      grid-column: 1 / -1;
-      grid-row: 2;
-      display: grid;
-      grid-template-columns: 120px 1fr 120px;
-      width: 100%;
-      justify-items: center;
-      align-items: center;
-      min-height: 160px;
-      background: linear-gradient(180deg, #eef2f7, #e2e8f0);
-      border: 1px solid #cbd5e1;
-      border-radius: 28px;
-      box-shadow: 0 12px 20px rgba(15, 23, 42, 0.1);
-      padding: 12px;
-    }
-
-    .mound-label {
-      color: #475569;
-      font-weight: 900;
-      font-size: 13px;
-      text-align: center;
-    }
-
-    .svg-figure-wrap {
-      width: 76px;
-      height: 112px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .svg-figure {
-      width: 76px;
-      height: 112px;
-      overflow: visible;
-      filter: drop-shadow(0 10px 14px rgba(15, 23, 42, 0.16));
-    }
-
-    .svg-figure.mirror { transform: scaleX(-1); }
-
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 10px;
-      font-size: 12px;
-      color: #475569;
-    }
-
-    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
-    .legend-color { width: 12px; height: 12px; border-radius: 4px; border: 1px solid #cbd5e1; }
-    .legend-strike { background: var(--yellow-zone); border-color: var(--yellow-zone-border); }
-    .legend-ball { background: var(--green-zone); border-color: var(--green-zone-border); }
-    .legend-rec { background: #bfdbfe; border-color: var(--recommend); }
-    .legend-compare { background: #fde68a; border-color: var(--compare); }
-
-    .pitch-row {
-      display: grid;
-      grid-template-columns: 66px minmax(0, 1fr) 72px 88px;
-      gap: 8px;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-
-    .pitch-row .idx { font-size: 12px; color: var(--muted); font-weight: 900; }
-
-    .zone-chip {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      min-width: 56px;
-      padding: 8px 10px;
-      border-radius: 10px;
-      background: #f1f5f9;
-      border: 1px solid #cbd5e1;
-      font-weight: 900;
-      color: #334155;
-    }
-
-    .table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .table th, .table td { border-bottom: 1px solid var(--line); padding: 10px 8px; text-align: center; vertical-align: middle; }
-    .table th { background: #f8fafc; color: #374151; font-size: 12px; }
-
-    .pitch-pill {
-      display: inline-flex;
-      padding: 5px 9px;
-      border-radius: 999px;
-      background: #eff6ff;
-      color: #1d4ed8;
-      font-weight: 900;
-      justify-content: center;
-    }
-
-    .code-sub { color: #64748b; font-size: 11px; margin-left: 3px; }
-    .score-good { color: var(--good); font-weight: 900; }
-    .score-bad { color: var(--bad); font-weight: 900; }
-    .score-neutral { color: var(--neutral); font-weight: 900; }
-
-    .comparison-card { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: #f8fafc; }
-    .comparison-result { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-    .mini-card { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
-    .mini-card h4 { margin: 0 0 8px; font-size: 13px; color: #374151; }
-    .mini-value { font-size: 20px; font-weight: 900; letter-spacing: -0.03em; }
-
-    details { margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; padding: 12px; background: #f8fafc; }
-    summary { cursor: pointer; font-weight: 900; color: #374151; }
-    pre { white-space: pre-wrap; word-break: break-word; background: #0f172a; color: #e5e7eb; padding: 14px; border-radius: 12px; overflow-x: auto; font-size: 12px; margin-top: 12px; }
-
-    .footer-note { margin-top: 22px; color: #cbd5e1; font-size: 12px; line-height: 1.6; }
-
-    @media (max-width: 720px) {
-      .page { padding: 18px 12px 32px; }
-      .field-grid, .field-grid.three { grid-template-columns: 1fr; }
-      .matchup-field { grid-template-columns: 62px minmax(0, 1fr) 62px; gap: 8px; }
-      .batter-slot, .pitcher-slot { width: 62px; min-height: 140px; }
-      .svg-figure-wrap { transform: scale(0.82); }
-      .pitcher-row { grid-template-columns: 86px 1fr 86px; }
-      .pitch-row { grid-template-columns: 58px minmax(0, 1fr) 64px; }
-      .pitch-row button { grid-column: 2 / span 2; }
-      .comparison-result { grid-template-columns: 1fr; }
-      .zone-cell.corner-tl, .zone-cell.corner-tr, .zone-cell.corner-bl, .zone-cell.corner-br { padding: 14px; }
-      .zone-label { font-size: 15px; }
-      .zone-sub { font-size: 9px; }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="page">
-    <header class="hero">
-      <div class="hero-top">
-        <div>
-          <h1>구종·위치 추천 시스템</h1>
-          <div class="subtitle">
-            이전 투구 흐름과 현재 경기 상황을 바탕으로 다음 구종 후보를 예측하고,<br />
-            Statcast zone별 기대득점 변화 경향을 이용해 투수에게 유리한 구종·위치 조합을 추천합니다.
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>구종 · 위치 추천 시스템</title>
+
+    <style>
+      :root {
+        --bg-1: #0f172a;
+        --bg-2: #111827;
+        --card: #ffffff;
+        --card-soft: #f8fafc;
+        --line: #e5e7eb;
+        --text: #111827;
+        --muted: #64748b;
+
+        --primary: #2563eb;
+        --primary-soft: #dbeafe;
+        --primary-dark: #1d4ed8;
+
+        --yellow-zone: #f3e7b3;
+        --yellow-zone-border: #c8aa45;
+        --green-zone: #c8e6d2;
+        --green-zone-border: #6ea783;
+
+        --recommend: #3b82f6;
+        --compare: #d97706;
+
+        --good: #059669;
+        --bad: #dc2626;
+        --neutral: #64748b;
+
+        --shadow: 0 18px 45px rgba(15, 23, 42, 0.2);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+        background:
+          radial-gradient(
+            circle at top left,
+            rgba(59, 130, 246, 0.22),
+            transparent 28%
+          ),
+          linear-gradient(135deg, #0f172a 0%, #111827 45%, #1e293b 100%);
+        color: var(--text);
+      }
+
+      .page {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 28px 20px 48px;
+      }
+
+      .hero {
+        color: white;
+        margin-bottom: 22px;
+      }
+
+      .hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 34px;
+        letter-spacing: -0.05em;
+      }
+
+      .subtitle {
+        margin-top: 10px;
+        color: #dbeafe;
+        line-height: 1.6;
+        font-size: 15px;
+      }
+
+      .badge-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .badge {
+        padding: 7px 11px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.1);
+        color: #e5e7eb;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .status-card {
+        width: 270px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 18px;
+        padding: 15px;
+        color: #e5e7eb;
+        backdrop-filter: blur(10px);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .status-card strong {
+        display: block;
+        color: #93c5fd;
+        margin-bottom: 6px;
+      }
+
+      .main-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid rgba(226, 232, 240, 0.9);
+        border-radius: 20px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      .panel-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid var(--line);
+        background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      }
+
+      .panel-header h2 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.03em;
+      }
+
+      .panel-header p {
+        margin: 6px 0 0;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .panel-body {
+        padding: 18px 20px 20px;
+      }
+
+      .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .field-grid.three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+      }
+
+      .field label {
+        font-size: 12px;
+        font-weight: 800;
+        color: #374151;
+      }
+
+      .field small {
+        font-size: 11px;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+
+      input,
+      select {
+        width: 100%;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 9px 10px;
+        font-size: 14px;
+        background: white;
+        outline: none;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+      }
+
+      .section-divider {
+        height: 1px;
+        background: var(--line);
+        margin: 18px 0;
+      }
+
+      .info-box {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 12px;
+        color: #475569;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .info-box.warn {
+        background: #fffbeb;
+        border-color: #fcd34d;
+        color: #78350f;
+      }
+
+      .button-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 11px 14px;
+        font-weight: 900;
+        cursor: pointer;
+        transition: 0.15s ease;
+        font-size: 14px;
+      }
+
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.22);
+      }
+      .btn-primary:hover {
+        background: var(--primary-dark);
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: #e5e7eb;
+        color: #111827;
+      }
+      .btn-secondary:hover {
+        background: #d1d5db;
+      }
+      .btn-ghost {
+        background: white;
+        border: 1px solid #cbd5e1;
+        color: #374151;
+      }
+      .btn-ghost:hover {
+        background: #f1f5f9;
+      }
+
+      .message {
+        display: none;
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+        font-size: 13px;
+      }
+      .message.show {
+        display: block;
+      }
+      .message.ok {
+        background: #ecfdf5;
+        border: 1px solid #bbf7d0;
+        color: #065f46;
+      }
+      .message.error {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #991b1b;
+      }
+
+      .pitch-checks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .pitch-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 7px 9px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        color: #334155;
+      }
+
+      .pitch-check input {
+        width: auto;
+      }
+
+      .zone-meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .active-target {
+        padding: 7px 10px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 900;
+        border: 1px solid #bfdbfe;
+      }
+
+      .matchup-field {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr) 96px;
+        grid-template-rows: auto auto;
+        gap: 12px 14px;
+        align-items: center;
+        justify-items: center;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .batter-slot,
+      .pitcher-slot {
+        width: 90px;
+        min-height: 178px;
+        border: 1px solid #dbeafe;
+        border-radius: 18px;
+        background: #f8fafc;
+        color: #64748b;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        opacity: 0.34;
+        transition: 0.16s ease;
+      }
+
+      .batter-slot.active {
+        opacity: 1;
+        background: linear-gradient(180deg, #fff7ed, #ffffff);
+        border-color: #fb923c;
+        box-shadow: 0 12px 22px rgba(249, 115, 22, 0.16);
+      }
+
+      .pitcher-slot.active {
+        opacity: 1;
+        background: linear-gradient(180deg, #eff6ff, #ffffff);
+        border-color: #60a5fa;
+        box-shadow: 0 12px 22px rgba(37, 99, 235, 0.16);
+      }
+
+      .slot-label {
+        font-size: 12px;
+        font-weight: 900;
+        color: #475569;
+      }
+
+      .plate-zone-wrap {
+        width: 100%;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      .zone-board-wrap {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        padding: 12px;
+        border-radius: 20px;
+        background: linear-gradient(180deg, #f8fafc, #eef2ff);
+        border: 1px solid #dbeafe;
+        overflow: hidden;
+      }
+
+      .zone-board {
+        position: relative;
+        width: min(100%, 430px);
+        aspect-ratio: 1 / 1;
+        border-radius: 18px;
+        background: #eef6ff;
+        border: 2px solid #64748b;
+        overflow: hidden;
+        box-shadow:
+          inset 0 0 0 1px rgba(15, 23, 42, 0.1),
+          0 12px 24px rgba(15, 23, 42, 0.1);
+      }
+
+      .zone-board::before,
+      .zone-board::after {
+        content: "";
+        position: absolute;
+        background: rgba(15, 23, 42, 0.18);
+        z-index: 1;
+      }
+      .zone-board::before {
+        width: 1px;
+        height: 100%;
+        left: 50%;
+        top: 0;
+      }
+      .zone-board::after {
+        height: 1px;
+        width: 100%;
+        left: 0;
+        top: 50%;
+      }
+
+      .zone-cell {
+        position: absolute;
+        border: 1.5px solid rgba(51, 65, 85, 0.35);
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        user-select: none;
+        font-weight: 900;
+        transition: 0.14s ease;
+      }
+
+      .zone-cell.outside {
+        background: rgba(200, 230, 210, 0.92);
+        color: #064e3b;
+        border-color: var(--green-zone-border);
+        z-index: 1;
+      }
+      .zone-cell.inside {
+        background: rgba(243, 231, 179, 0.96);
+        color: #713f12;
+        border-color: var(--yellow-zone-border);
+        z-index: 3;
+      }
+
+      .zone-cell.corner-tl {
+        align-items: flex-start;
+        justify-content: flex-start;
+        padding: 22px;
+      }
+      .zone-cell.corner-tr {
+        align-items: flex-end;
+        justify-content: flex-start;
+        padding: 22px;
+      }
+      .zone-cell.corner-bl {
+        align-items: flex-start;
+        justify-content: flex-end;
+        padding: 22px;
+      }
+      .zone-cell.corner-br {
+        align-items: flex-end;
+        justify-content: flex-end;
+        padding: 22px;
+      }
+
+      .zone-cell:hover {
+        filter: brightness(1.04);
+        transform: translateY(-1px);
+      }
+      .zone-cell.active {
+        background: #dbeafe;
+        border-color: var(--primary);
+        box-shadow: inset 0 0 0 4px rgba(37, 99, 235, 0.24);
+      }
+      .zone-cell.recommended {
+        background: #bfdbfe;
+        border-color: var(--recommend);
+        box-shadow: inset 0 0 0 4px rgba(37, 99, 235, 0.28);
+      }
+      .zone-cell.compare {
+        background: #fde68a;
+        border-color: var(--compare);
+        box-shadow: inset 0 0 0 4px rgba(217, 119, 6, 0.25);
+      }
+      .zone-cell.both {
+        background: linear-gradient(135deg, #bfdbfe 0%, #fde68a 100%);
+        border-color: #14b8a6;
+        box-shadow: inset 0 0 0 4px rgba(20, 184, 166, 0.24);
+      }
+
+      .zone-label {
+        font-size: 19px;
+        line-height: 1;
+        letter-spacing: -0.03em;
+      }
+      .zone-sub {
+        font-size: 11px;
+        color: #334155;
+        font-weight: 800;
+      }
+
+      .home-plate {
+        width: 94px;
+        height: 48px;
+        margin-top: 10px;
+        background: #f8fafc;
+        border: 2px solid #64748b;
+        clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+      }
+
+      .pitcher-row {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        display: grid;
+        grid-template-columns: 120px 1fr 120px;
+        width: 100%;
+        justify-items: center;
+        align-items: center;
+        min-height: 160px;
+        background: linear-gradient(180deg, #eef2f7, #e2e8f0);
+        border: 1px solid #cbd5e1;
+        border-radius: 28px;
+        box-shadow: 0 12px 20px rgba(15, 23, 42, 0.1);
+        padding: 12px;
+      }
+
+      .mound-label {
+        color: #475569;
+        font-weight: 900;
+        font-size: 13px;
+        text-align: center;
+      }
+
+      .svg-figure-wrap {
+        width: 76px;
+        height: 112px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .svg-figure {
+        width: 76px;
+        height: 112px;
+        overflow: visible;
+        filter: drop-shadow(0 10px 14px rgba(15, 23, 42, 0.16));
+      }
+
+      .svg-figure.mirror {
+        transform: scaleX(-1);
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #475569;
+      }
+
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .legend-color {
+        width: 12px;
+        height: 12px;
+        border-radius: 4px;
+        border: 1px solid #cbd5e1;
+      }
+      .legend-strike {
+        background: var(--yellow-zone);
+        border-color: var(--yellow-zone-border);
+      }
+      .legend-ball {
+        background: var(--green-zone);
+        border-color: var(--green-zone-border);
+      }
+      .legend-rec {
+        background: #bfdbfe;
+        border-color: var(--recommend);
+      }
+      .legend-compare {
+        background: #fde68a;
+        border-color: var(--compare);
+      }
+
+      .pitch-row {
+        display: grid;
+        grid-template-columns: 66px minmax(0, 1fr) 72px 88px;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+
+      .pitch-row .idx {
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 900;
+      }
+
+      .zone-chip {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 56px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: #f1f5f9;
+        border: 1px solid #cbd5e1;
+        font-weight: 900;
+        color: #334155;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      .table th,
+      .table td {
+        border-bottom: 1px solid var(--line);
+        padding: 10px 8px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      .table th {
+        background: #f8fafc;
+        color: #374151;
+        font-size: 12px;
+      }
+
+      .pitch-pill {
+        display: inline-flex;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-weight: 900;
+        justify-content: center;
+      }
+
+      .code-sub {
+        color: #64748b;
+        font-size: 11px;
+        margin-left: 3px;
+      }
+      .score-good {
+        color: var(--good);
+        font-weight: 900;
+      }
+      .score-bad {
+        color: var(--bad);
+        font-weight: 900;
+      }
+      .score-neutral {
+        color: var(--neutral);
+        font-weight: 900;
+      }
+
+      .comparison-card {
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        background: #f8fafc;
+      }
+      .comparison-result {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .mini-card {
+        background: white;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+      }
+      .mini-card h4 {
+        margin: 0 0 8px;
+        font-size: 13px;
+        color: #374151;
+      }
+      .mini-value {
+        font-size: 20px;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+      }
+
+      details {
+        margin-top: 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 12px;
+        background: #f8fafc;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 900;
+        color: #374151;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: #0f172a;
+        color: #e5e7eb;
+        padding: 14px;
+        border-radius: 12px;
+        overflow-x: auto;
+        font-size: 12px;
+        margin-top: 12px;
+      }
+
+      .footer-note {
+        margin-top: 22px;
+        color: #cbd5e1;
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          padding: 18px 12px 32px;
+        }
+        .field-grid,
+        .field-grid.three {
+          grid-template-columns: 1fr;
+        }
+        .matchup-field {
+          grid-template-columns: 62px minmax(0, 1fr) 62px;
+          gap: 8px;
+        }
+        .batter-slot,
+        .pitcher-slot {
+          width: 62px;
+          min-height: 140px;
+        }
+        .svg-figure-wrap {
+          transform: scale(0.82);
+        }
+        .pitcher-row {
+          grid-template-columns: 86px 1fr 86px;
+        }
+        .pitch-row {
+          grid-template-columns: 58px minmax(0, 1fr) 64px;
+        }
+        .pitch-row button {
+          grid-column: 2 / span 2;
+        }
+        .comparison-result {
+          grid-template-columns: 1fr;
+        }
+        .zone-cell.corner-tl,
+        .zone-cell.corner-tr,
+        .zone-cell.corner-bl,
+        .zone-cell.corner-br {
+          padding: 14px;
+        }
+        .zone-label {
+          font-size: 15px;
+        }
+        .zone-sub {
+          font-size: 9px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero-top">
+          <div>
+            <h1>구종·위치 추천 시스템</h1>
+            <div class="subtitle">
+              이전 투구 흐름과 현재 경기 상황을 바탕으로 다음 구종 후보를
+              예측하고,<br />
+              Statcast zone별 기대득점 변화 경향을 이용해 투수에게 유리한
+              구종·위치 조합을 추천합니다.
+            </div>
+            <div class="badge-row">
+              <div class="badge">LSTM 기반 구종 후보 생성</div>
+              <div class="badge">기대득점 변화 기반 위치 랭킹</div>
+              <div class="badge">투수 시점 Zone UI</div>
+              <div class="badge">직접 선택 비교</div>
+            </div>
           </div>
-          <div class="badge-row">
-            <div class="badge">LSTM 구종 후보 생성</div>
-            <div class="badge">기대득점 변화 기반 위치 랭킹</div>
-            <div class="badge">투수 시점 Zone UI</div>
-            <div class="badge">직접 선택 비교</div>
+
+          <div class="status-card">
+            <strong>현재 데모 상태</strong>
+            <div id="healthText">서버 상태 확인 전</div>
           </div>
         </div>
+      </header>
 
-        <div class="status-card">
-          <strong>현재 데모 상태</strong>
-          <div id="healthText">서버 상태 확인 전</div>
-        </div>
-      </div>
-    </header>
-
-    <main class="main-grid">
-      <section class="panel">
-        <div class="panel-header">
-          <h2>1. 현재 경기 상황</h2>
-          <p>현재 타석의 상황과 투수·타자 좌우 정보를 입력합니다.</p>
-        </div>
-
-        <div class="panel-body">
-          <input id="pitcher" type="hidden" value="622503" />
-          <input id="batter" type="hidden" value="" />
-
-          <div class="info-box" style="margin-bottom: 14px;">
-            <b>데모 투수 기준</b><br />
-            현재 화면은 학습 데이터에 포함된 예시 투수를 기준으로 추천합니다.
-            실제 서비스에서는 팀/투수 선택 기능으로 확장할 수 있습니다.
+      <main class="main-grid">
+        <section class="panel">
+          <div class="panel-header">
+            <h2>1. 현재 경기 상황</h2>
+            <p>현재 타석의 상황과 투수·타자 좌우 정보를 입력합니다.</p>
           </div>
 
-          <div class="field-grid">
-            <div class="field"><label>볼</label><input id="balls" type="number" min="0" max="3" value="1" /></div>
-            <div class="field"><label>스트라이크</label><input id="strikes" type="number" min="0" max="2" value="2" /></div>
-            <div class="field"><label>아웃카운트</label><input id="outs_when_up" type="number" min="0" max="2" value="1" /></div>
-            <div class="field"><label>이닝</label><input id="inning" type="number" min="1" max="20" value="7" /></div>
-          </div>
+          <div class="panel-body">
+            <input id="pitcher" type="hidden" value="622503" />
+            <input id="batter" type="hidden" value="" />
 
-          <div class="section-divider"></div>
-
-          <div class="field-grid three">
-            <div class="field"><label>1루 주자</label><select id="runner_1b"><option value="0" selected>없음</option><option value="1">있음</option></select></div>
-            <div class="field"><label>2루 주자</label><select id="runner_2b"><option value="0">없음</option><option value="1" selected>있음</option></select></div>
-            <div class="field"><label>3루 주자</label><select id="runner_3b"><option value="0" selected>없음</option><option value="1">있음</option></select></div>
-          </div>
-
-          <div class="section-divider"></div>
-
-          <div class="field-grid">
-            <div class="field"><label>타자 방향</label><select id="stand"><option value="R" selected>우타자</option><option value="L">좌타자</option></select></div>
-            <div class="field"><label>투수 손</label><select id="p_throws"><option value="R" selected>우투수</option><option value="L">좌투수</option></select></div>
-            <div class="field"><label>최종 추천 개수</label><input id="top_n" type="number" min="1" max="20" value="5" /></div>
-          </div>
-
-          <div class="section-divider"></div>
-
-          <div class="field">
-            <label>후보 구종 제한</label>
-            <div id="candidatePitchChecks" class="pitch-checks"></div>
-            <small>선택한 구종만 최종 추천 후보로 평가합니다. 선택하지 않으면 LSTM Top-3와 해당 투수의 주 구종을 자동 후보로 사용합니다.</small>
-          </div>
-
-          <div class="info-box warn" style="margin-top: 16px;">
-            <b>현재 모델 범위</b><br />
-            현재 데모는 이전 투구 흐름, 볼카운트, 주자 상황, 투수 손, 타자 방향을 중심으로 추천합니다.
-            점수 차, 오늘 투구 수, 선발/구원 여부, 구속, 회전수는 아직 직접 반영하지 않았으며 향후 확장 항목입니다.
-          </div>
-
-          <div class="button-row">
-            <button class="btn-primary" onclick="recommend()">추천 받기</button>
-            <button class="btn-secondary" onclick="resetDemo()">예시값 초기화</button>
-          </div>
-
-          <div id="message" class="message"></div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2>2. 이전 투구 이력과 위치</h2>
-          <p>구종을 선택하고, 투수 시점의 스트라이크존에서 위치를 클릭합니다.</p>
-        </div>
-
-        <div class="panel-body">
-          <div class="zone-meta">
-            <div class="active-target" id="activeTargetText">선택 대상: 이전 투구 1 위치</div>
-            <div>투수 시점 표시</div>
-          </div>
-
-          <div class="matchup-field" style="margin-top: 12px;">
-            <div class="batter-slot" id="leftBatterSlot">
-              <div class="slot-label">좌타석</div>
-              <div id="leftBatterSvg" class="svg-figure-wrap"></div>
-              <div class="batter-desc">좌타자</div>
+            <div class="info-box" style="margin-bottom: 14px">
+              <b>데모 투수 기준</b><br />
+              현재 화면은 학습 데이터에 포함된 예시 투수를 기준으로 추천합니다.
+              실제 서비스에서는 팀/투수 선택 기능으로 확장할 수 있습니다.
             </div>
 
-            <div class="plate-zone-wrap">
-              <div class="zone-board-wrap"><div id="zoneBoard" class="zone-board"></div></div>
-              <div class="home-plate"></div>
-            </div>
-
-            <div class="batter-slot" id="rightBatterSlot">
-              <div class="slot-label">우타석</div>
-              <div id="rightBatterSvg" class="svg-figure-wrap"></div>
-              <div class="batter-desc">우타자</div>
-            </div>
-
-            <div class="pitcher-row">
-              <div class="pitcher-slot" id="leftPitcherSlot">
-                <div class="slot-label">좌투</div>
-                <div id="leftPitcherSvg" class="svg-figure-wrap"></div>
-              </div>
-              <div class="mound-label" id="pitcherDesc">우투수</div>
-              <div class="pitcher-slot" id="rightPitcherSlot">
-                <div class="slot-label">우투</div>
-                <div id="rightPitcherSvg" class="svg-figure-wrap"></div>
-              </div>
-            </div>
-          </div>
-
-          <div class="legend">
-            <div class="legend-item"><span class="legend-color legend-strike"></span> 스트라이크</div>
-            <div class="legend-item"><span class="legend-color legend-ball"></span> 볼/유인구</div>
-            <div class="legend-item"><span class="legend-color legend-rec"></span> 모델 추천</div>
-            <div class="legend-item"><span class="legend-color legend-compare"></span> 직접 비교</div>
-          </div>
-
-          <div class="info-box" style="margin-top: 12px;">
-            <b>Zone 안내</b><br />
-            Z1~Z9는 스트라이크존 내부, Z11~Z14는 바깥 유인구 영역입니다.
-            화면은 중계에서 익숙한 투수 시점에 가깝게 좌우를 배치했습니다.
-          </div>
-
-          <div class="section-divider"></div>
-
-          <h3 style="margin: 0 0 10px; font-size: 16px;">이전 투구 입력</h3>
-          <div id="prevPitchRows"></div>
-
-          <div class="info-box warn" style="margin-top: 14px;">
-            1~4구째 상황에서는 부족한 이전 투구를 “이전 투구 없음”으로 설정할 수 있습니다.
-            서버에는 실제 존재하는 이전 투구만 전달되고, 부족한 부분은 모델 내부에서 PAD로 처리됩니다.
-          </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2>3. 추천 결과</h2>
-          <p>LSTM 구종 후보와 기대득점 변화 기반 최종 구종·위치 추천을 확인합니다.</p>
-        </div>
-
-        <div class="panel-body">
-          <h3 style="margin: 0 0 10px; font-size: 16px;">LSTM Top-3 구종 후보</h3>
-          <table class="table" id="lstmTable"><thead><tr><th>순위</th><th>구종</th><th>예측 확률</th></tr></thead><tbody><tr><td colspan="3">아직 추천을 실행하지 않았습니다.</td></tr></tbody></table>
-
-          <div class="section-divider"></div>
-
-          <h3 style="margin: 0 0 10px; font-size: 16px;">최종 구종·위치 추천</h3>
-          <table class="table" id="recTable"><thead><tr><th>순위</th><th>구종</th><th>위치</th><th>예상 기대득점 변화</th><th>근거</th><th>표본</th></tr></thead><tbody><tr><td colspan="6">아직 추천을 실행하지 않았습니다.</td></tr></tbody></table>
-
-          <div class="info-box" style="margin-top: 12px;">
-            <b>신뢰도 기준</b><br />
-            추천 근거는 학습 구간 약 132만 개 투구에서 계산한 경험적 기대득점 변화입니다.
-            표본 수 1,000개 이상은 높음, 100~999개는 보통, 100개 미만은 낮음으로 표시합니다.
-          </div>
-
-          <div class="section-divider"></div>
-
-          <div class="comparison-card">
-            <h3 style="margin: 0 0 10px; font-size: 16px;">4. 직접 선택 비교</h3>
             <div class="field-grid">
-              <div class="field"><label>비교할 구종</label><select id="compare_pitch_type"></select></div>
-              <div class="field"><label>비교할 위치</label><div class="zone-chip" id="compareZoneChip">Z13</div></div>
+              <div class="field">
+                <label>볼</label
+                ><input id="balls" type="number" min="0" max="3" value="1" />
+              </div>
+              <div class="field">
+                <label>스트라이크</label
+                ><input id="strikes" type="number" min="0" max="2" value="2" />
+              </div>
+              <div class="field">
+                <label>아웃카운트</label
+                ><input
+                  id="outs_when_up"
+                  type="number"
+                  min="0"
+                  max="2"
+                  value="1"
+                />
+              </div>
+              <div class="field">
+                <label>이닝</label
+                ><input id="inning" type="number" min="1" max="20" value="7" />
+              </div>
             </div>
+
+            <div class="section-divider"></div>
+
+            <div class="field-grid three">
+              <div class="field">
+                <label>1루 주자</label
+                ><select id="runner_1b">
+                  <option value="0" selected>없음</option>
+                  <option value="1">있음</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>2루 주자</label
+                ><select id="runner_2b">
+                  <option value="0">없음</option>
+                  <option value="1" selected>있음</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>3루 주자</label
+                ><select id="runner_3b">
+                  <option value="0" selected>없음</option>
+                  <option value="1">있음</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="field-grid">
+              <div class="field">
+                <label>타자 방향</label
+                ><select id="stand">
+                  <option value="R" selected>우타자</option>
+                  <option value="L">좌타자</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>투수 손</label
+                ><select id="p_throws">
+                  <option value="R" selected>우투수</option>
+                  <option value="L">좌투수</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>최종 추천 개수</label
+                ><input id="top_n" type="number" min="1" max="20" value="5" />
+              </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="field">
+              <label>후보 구종 제한</label>
+              <div id="candidatePitchChecks" class="pitch-checks"></div>
+              <small
+                >선택한 구종만 최종 추천 후보로 평가합니다. 선택하지 않으면 LSTM
+                Top-3와 해당 투수의 주 구종을 자동 후보로 사용합니다.</small
+              >
+            </div>
+
+            <div class="info-box warn" style="margin-top: 16px">
+              <b>현재 모델 범위</b><br />
+              현재 데모는 이전 투구 흐름, 볼카운트, 주자 상황, 투수 손, 타자
+              방향을 중심으로 추천합니다. <br />점수 차, 오늘 투구 수, 선발/구원
+              여부, 구속, 회전수는 아직 직접 반영하지 않았으며 향후 확장
+              항목입니다.
+            </div>
+
             <div class="button-row">
-              <button class="btn-ghost" onclick="setActiveCompare()">비교 위치 선택</button>
-              <button class="btn-primary" onclick="compareAction()">직접 선택 비교</button>
+              <button class="btn-primary" onclick="recommend()">
+                추천 받기
+              </button>
+              <button class="btn-secondary" onclick="resetDemo()">
+                예시값 초기화
+              </button>
             </div>
-            <div id="compareResult" class="comparison-result" style="display:none;"></div>
+
+            <div id="message" class="message"></div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>2. 이전 투구 이력과 위치</h2>
+            <p>
+              구종을 선택하고, 투수 시점의 스트라이크존에서 위치를 클릭합니다.
+            </p>
           </div>
 
-          <details><summary>Raw JSON 보기</summary><pre id="rawJson">아직 결과가 없습니다.</pre></details>
-        </div>
-      </section>
-    </main>
+          <div class="panel-body">
+            <div class="zone-meta">
+              <div class="active-target" id="activeTargetText">
+                선택 대상: 이전 투구 1 위치
+              </div>
+              <div>투수 시점 표시</div>
+            </div>
 
-    <div class="footer-note">
-      본 서비스는 연구용 데모입니다. 추천 위치는 포수가 의도한 목표 위치가 아니라 Statcast 실제 도착 zone 기반이며,
-      예측된 기대득점 변화량은 과거 데이터의 경험적 경향을 의미합니다.
+            <div class="matchup-field" style="margin-top: 12px">
+              <div class="batter-slot" id="leftBatterSlot">
+                <div class="slot-label">좌타석</div>
+                <div id="leftBatterSvg" class="svg-figure-wrap"></div>
+                <div class="batter-desc">좌타자</div>
+              </div>
+
+              <div class="plate-zone-wrap">
+                <div class="zone-board-wrap">
+                  <div id="zoneBoard" class="zone-board"></div>
+                </div>
+                <div class="home-plate"></div>
+              </div>
+
+              <div class="batter-slot" id="rightBatterSlot">
+                <div class="slot-label">우타석</div>
+                <div id="rightBatterSvg" class="svg-figure-wrap"></div>
+                <div class="batter-desc">우타자</div>
+              </div>
+
+              <div class="pitcher-row">
+                <div class="pitcher-slot" id="leftPitcherSlot">
+                  <div class="slot-label">좌투</div>
+                  <div id="leftPitcherSvg" class="svg-figure-wrap"></div>
+                </div>
+                <div class="mound-label" id="pitcherDesc">우투수</div>
+                <div class="pitcher-slot" id="rightPitcherSlot">
+                  <div class="slot-label">우투</div>
+                  <div id="rightPitcherSvg" class="svg-figure-wrap"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="legend">
+              <div class="legend-item">
+                <span class="legend-color legend-strike"></span> 스트라이크
+              </div>
+              <div class="legend-item">
+                <span class="legend-color legend-ball"></span> 볼/유인구
+              </div>
+              <div class="legend-item">
+                <span class="legend-color legend-rec"></span> 모델 추천
+              </div>
+              <div class="legend-item">
+                <span class="legend-color legend-compare"></span> 직접 비교
+              </div>
+            </div>
+
+            <div class="info-box" style="margin-top: 12px">
+              <b>Zone 안내</b><br />
+              Z1~Z9는 스트라이크존 내부, Z11~Z14는 존 밖 영역입니다. 화면은
+              중계에서 익숙한 투수 시점에 가깝게 좌우를 배치했습니다.
+            </div>
+
+            <div class="section-divider"></div>
+
+            <h3 style="margin: 0 0 10px; font-size: 16px">이전 투구 입력</h3>
+            <div id="prevPitchRows"></div>
+
+            <div class="info-box warn" style="margin-top: 14px">
+              1~4구째 상황에서는 부족한 이전 투구를 “이전 투구 없음”으로 설정할
+              수 있습니다. <br />
+              서버에는 실제 존재하는 이전 투구만 전달되고, 부족한 부분은 모델
+              내부에서 PAD로 처리됩니다.
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2>3. 추천 결과</h2>
+            <p>
+              LSTM 구종 후보와 기대득점 변화 기반 최종 구종·위치 추천을
+              확인합니다.
+            </p>
+          </div>
+
+          <div class="panel-body">
+            <h3 style="margin: 0 0 10px; font-size: 16px">
+              LSTM Top-3 구종 후보
+            </h3>
+            <table class="table" id="lstmTable">
+              <thead>
+                <tr>
+                  <th>순위</th>
+                  <th>구종</th>
+                  <th>예측 확률</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="3">아직 추천을 실행하지 않았습니다.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="section-divider"></div>
+
+            <h3 style="margin: 0 0 10px; font-size: 16px">
+              최종 구종·위치 추천
+            </h3>
+            <table class="table" id="recTable">
+              <thead>
+                <tr>
+                  <th>순위</th>
+                  <th>구종</th>
+                  <th>위치</th>
+                  <th>예상 기대득점 변화</th>
+                  <th>근거</th>
+                  <th>표본</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="6">아직 추천을 실행하지 않았습니다.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="info-box" style="margin-top: 12px">
+              <b>신뢰도 기준</b><br />
+              추천 근거는 학습 구간 약 132만 개 투구에서 계산한 경험적 기대득점
+              변화입니다. <br />
+              표본 수 1,000개 이상은 높음, 100~999개는 보통, 100개 미만은
+              낮음으로 표시합니다.
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="comparison-card">
+              <h3 style="margin: 0 0 10px; font-size: 16px">
+                4. 직접 선택 비교
+              </h3>
+              <div class="field-grid">
+                <div class="field">
+                  <label>비교할 구종</label
+                  ><select id="compare_pitch_type"></select>
+                </div>
+                <div class="field">
+                  <label>비교할 위치</label>
+                  <div class="zone-chip" id="compareZoneChip">Z13</div>
+                </div>
+              </div>
+              <div class="button-row">
+                <button class="btn-ghost" onclick="setActiveCompare()">
+                  비교 위치 선택
+                </button>
+                <button class="btn-primary" onclick="compareAction()">
+                  직접 선택 비교
+                </button>
+              </div>
+              <div
+                id="compareResult"
+                class="comparison-result"
+                style="display: none"
+              ></div>
+            </div>
+
+            <details>
+              <summary>Raw JSON 보기</summary>
+              <pre id="rawJson">아직 결과가 없습니다.</pre>
+            </details>
+          </div>
+        </section>
+      </main>
+
+      <div class="footer-note">
+        본 서비스는 연구용 데모입니다. <br />
+        추천 위치는 포수가 의도한 목표 위치가 아니라 Statcast 실제 도착 zone
+        기반이며, 예측된 기대득점 변화량은 과거 데이터의 경험적 경향을
+        의미합니다.<br /><br />
+        개발 : 세종대학교 지능기전공학부 무인이동체공학전공 지준구,
+        jun9u20@gmail.com
+      </div>
     </div>
-  </div>
 
-  <script>
-    const OUTCOME_TRAIN_ROWS = 1326278;
-    const PITCH_TYPES = ["FF", "SI", "SL", "CH", "FC", "ST", "CU", "FS", "KC"];
-    const PITCH_TYPES_WITH_NONE = ["NONE", ...PITCH_TYPES];
+    <script>
+      const OUTCOME_TRAIN_ROWS = 1326278;
+      const PITCH_TYPES = [
+        "FF",
+        "SI",
+        "SL",
+        "CH",
+        "FC",
+        "ST",
+        "CU",
+        "FS",
+        "KC",
+      ];
+      const PITCH_TYPES_WITH_NONE = ["NONE", ...PITCH_TYPES];
 
-    const PITCH_LABELS = {
-      NONE: "이전 투구 없음",
-      FF: "포심 패스트볼",
-      SI: "싱커",
-      SL: "슬라이더",
-      CH: "체인지업",
-      FC: "커터",
-      ST: "스위퍼",
-      CU: "커브",
-      FS: "스플리터",
-      KC: "너클커브",
-      OTHER: "기타 구종"
-    };
+      const PITCH_LABELS = {
+        NONE: "이전 투구 없음",
+        FF: "포심 패스트볼",
+        SI: "싱커",
+        SL: "슬라이더",
+        CH: "체인지업",
+        FC: "커터",
+        ST: "스위퍼",
+        CU: "커브",
+        FS: "스플리터",
+        KC: "너클커브",
+        OTHER: "기타 구종",
+      };
 
-    const PITCH_ENGLISH = {
-      FF: "4-Seam Fastball",
-      SI: "Sinker",
-      SL: "Slider",
-      CH: "Changeup",
-      FC: "Cutter",
-      ST: "Sweeper",
-      CU: "Curveball",
-      FS: "Splitter",
-      KC: "Knuckle Curve",
-      OTHER: "Other"
-    };
+      const PITCH_ENGLISH = {
+        FF: "4-Seam Fastball",
+        SI: "Sinker",
+        SL: "Slider",
+        CH: "Changeup",
+        FC: "Cutter",
+        ST: "Sweeper",
+        CU: "Curveball",
+        FS: "Splitter",
+        KC: "Knuckle Curve",
+        OTHER: "Other",
+      };
 
-    const PREV_LABELS = ["5구 전", "4구 전", "3구 전", "2구 전", "1구 전"];
+      const PREV_LABELS = ["5구 전", "4구 전", "3구 전", "2구 전", "1구 전"];
 
-    function pitchLabel(code) { return PITCH_LABELS[code] || code; }
-    function pitchEnglish(code) { return PITCH_ENGLISH[code] || code; }
-    function pitchOptionLabel(code) { return code === "NONE" ? "이전 투구 없음" : `${pitchLabel(code)} (${pitchEnglish(code)})`; }
+      function pitchLabel(code) {
+        return PITCH_LABELS[code] || code;
+      }
+      function pitchEnglish(code) {
+        return PITCH_ENGLISH[code] || code;
+      }
+      function pitchOptionLabel(code) {
+        return code === "NONE"
+          ? "이전 투구 없음"
+          : `${pitchLabel(code)} (${pitchEnglish(code)})`;
+      }
 
-    const ZONE_LAYOUT_PITCHER_VIEW = {
-      Z12: { left: 0, top: 0, width: 50, height: 50, type: "outside", corner: "corner-tl" },
-      Z11: { left: 50, top: 0, width: 50, height: 50, type: "outside", corner: "corner-tr" },
-      Z14: { left: 0, top: 50, width: 50, height: 50, type: "outside", corner: "corner-bl" },
-      Z13: { left: 50, top: 50, width: 50, height: 50, type: "outside", corner: "corner-br" },
-      Z3: { left: 18, top: 18, width: 21.333, height: 21.333, type: "inside" },
-      Z2: { left: 39.333, top: 18, width: 21.333, height: 21.333, type: "inside" },
-      Z1: { left: 60.666, top: 18, width: 21.333, height: 21.333, type: "inside" },
-      Z6: { left: 18, top: 39.333, width: 21.333, height: 21.333, type: "inside" },
-      Z5: { left: 39.333, top: 39.333, width: 21.333, height: 21.333, type: "inside" },
-      Z4: { left: 60.666, top: 39.333, width: 21.333, height: 21.333, type: "inside" },
-      Z9: { left: 18, top: 60.666, width: 21.333, height: 21.333, type: "inside" },
-      Z8: { left: 39.333, top: 60.666, width: 21.333, height: 21.333, type: "inside" },
-      Z7: { left: 60.666, top: 60.666, width: 21.333, height: 21.333, type: "inside" }
-    };
+      const ZONE_LAYOUT_PITCHER_VIEW = {
+        Z12: {
+          left: 0,
+          top: 0,
+          width: 50,
+          height: 50,
+          type: "outside",
+          corner: "corner-tl",
+        },
+        Z11: {
+          left: 50,
+          top: 0,
+          width: 50,
+          height: 50,
+          type: "outside",
+          corner: "corner-tr",
+        },
+        Z14: {
+          left: 0,
+          top: 50,
+          width: 50,
+          height: 50,
+          type: "outside",
+          corner: "corner-bl",
+        },
+        Z13: {
+          left: 50,
+          top: 50,
+          width: 50,
+          height: 50,
+          type: "outside",
+          corner: "corner-br",
+        },
+        Z3: {
+          left: 18,
+          top: 18,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z2: {
+          left: 39.333,
+          top: 18,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z1: {
+          left: 60.666,
+          top: 18,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z6: {
+          left: 18,
+          top: 39.333,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z5: {
+          left: 39.333,
+          top: 39.333,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z4: {
+          left: 60.666,
+          top: 39.333,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z9: {
+          left: 18,
+          top: 60.666,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z8: {
+          left: 39.333,
+          top: 60.666,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+        Z7: {
+          left: 60.666,
+          top: 60.666,
+          width: 21.333,
+          height: 21.333,
+          type: "inside",
+        },
+      };
 
-    const DEFAULT_PREV_ROWS = [
-      { pitch: "FF", zone: "Z5" },
-      { pitch: "SL", zone: "Z13" },
-      { pitch: "FF", zone: "Z2" },
-      { pitch: "CH", zone: "Z14" },
-      { pitch: "SL", zone: "Z7" }
-    ];
+      const DEFAULT_PREV_ROWS = [
+        { pitch: "FF", zone: "Z5" },
+        { pitch: "SL", zone: "Z13" },
+        { pitch: "FF", zone: "Z2" },
+        { pitch: "CH", zone: "Z14" },
+        { pitch: "SL", zone: "Z7" },
+      ];
 
-    let prevRows = JSON.parse(JSON.stringify(DEFAULT_PREV_ROWS));
-    let activeTarget = { type: "prev", index: 0 };
-    let compareZone = "Z13";
-    let lastRecommendData = null;
+      let prevRows = JSON.parse(JSON.stringify(DEFAULT_PREV_ROWS));
+      let activeTarget = { type: "prev", index: 0 };
+      let compareZone = "Z13";
+      let lastRecommendData = null;
 
-    function createBatterSvg(side) {
-      const mirrorClass = side === "L" ? "mirror" : "";
-      return `
+      function createBatterSvg(side) {
+        const mirrorClass = side === "L" ? "mirror" : "";
+        return `
         <svg class="svg-figure ${mirrorClass}" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" aria-label="batter">
           <path d="M45 92 L34 128" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
           <path d="M56 92 L70 128" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
@@ -825,11 +1318,11 @@
           <ellipse cx="72" cy="130" rx="12" ry="5" fill="#1f2937"/>
         </svg>
       `;
-    }
+      }
 
-    function createPitcherSvg(hand) {
-      const mirrorClass = hand === "L" ? "mirror" : "";
-      return `
+      function createPitcherSvg(hand) {
+        const mirrorClass = hand === "L" ? "mirror" : "";
+        return `
         <svg class="svg-figure ${mirrorClass}" viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg" aria-label="pitcher">
           <path d="M45 92 L35 128" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
           <path d="M55 92 L78 122" stroke="#334155" stroke-width="8" stroke-linecap="round"/>
@@ -846,304 +1339,386 @@
           <ellipse cx="80" cy="124" rx="12" ry="5" fill="#1f2937"/>
         </svg>
       `;
-    }
+      }
 
-    function showMessage(text, type = "ok") {
-      const el = document.getElementById("message");
-      el.textContent = text;
-      el.className = `message show ${type}`;
-    }
+      function showMessage(text, type = "ok") {
+        const el = document.getElementById("message");
+        el.textContent = text;
+        el.className = `message show ${type}`;
+      }
 
-    function clearMessage() {
-      const el = document.getElementById("message");
-      el.textContent = "";
-      el.className = "message";
-    }
+      function clearMessage() {
+        const el = document.getElementById("message");
+        el.textContent = "";
+        el.className = "message";
+      }
 
-    function getCandidatePitchTypes() {
-      const checks = document.querySelectorAll("#candidatePitchChecks input[type='checkbox']:checked");
-      return Array.from(checks).map(x => x.value);
-    }
+      function getCandidatePitchTypes() {
+        const checks = document.querySelectorAll(
+          "#candidatePitchChecks input[type='checkbox']:checked",
+        );
+        return Array.from(checks).map((x) => x.value);
+      }
 
-    function getAvailableCandidatePitches() {
-      const checked = getCandidatePitchTypes();
-      return checked.length > 0 ? checked : PITCH_TYPES;
-    }
+      function getAvailableCandidatePitches() {
+        const checked = getCandidatePitchTypes();
+        return checked.length > 0 ? checked : PITCH_TYPES;
+      }
 
-    function makePitchOptions(selected, includeNone = true) {
-      const chosen = getAvailableCandidatePitches();
-      const options = includeNone ? ["NONE", ...chosen] : chosen;
-      return options.map(p => `<option value="${p}" ${p === selected ? "selected" : ""}>${pitchOptionLabel(p)}</option>`).join("");
-    }
+      function makePitchOptions(selected, includeNone = true) {
+        const chosen = getAvailableCandidatePitches();
+        const options = includeNone ? ["NONE", ...chosen] : chosen;
+        return options
+          .map(
+            (p) =>
+              `<option value="${p}" ${p === selected ? "selected" : ""}>${pitchOptionLabel(p)}</option>`,
+          )
+          .join("");
+      }
 
-    function renderCandidatePitchChecks() {
-      const box = document.getElementById("candidatePitchChecks");
-      box.innerHTML = "";
-      const defaultChecked = new Set(["FF", "SL", "CH"]);
-      PITCH_TYPES.forEach(p => {
-        const label = document.createElement("label");
-        label.className = "pitch-check";
-        label.innerHTML = `
+      function renderCandidatePitchChecks() {
+        const box = document.getElementById("candidatePitchChecks");
+        box.innerHTML = "";
+        const defaultChecked = new Set(["FF", "SL", "CH"]);
+        PITCH_TYPES.forEach((p) => {
+          const label = document.createElement("label");
+          label.className = "pitch-check";
+          label.innerHTML = `
           <input type="checkbox" value="${p}" ${defaultChecked.has(p) ? "checked" : ""} onchange="handleCandidateChange()" />
           ${pitchLabel(p)} (${pitchEnglish(p)})
         `;
-        box.appendChild(label);
-      });
-    }
-
-    function handleCandidateChange() {
-      const available = getAvailableCandidatePitches();
-      prevRows = prevRows.map(row => {
-        if (row.pitch !== "NONE" && !available.includes(row.pitch)) {
-          return { pitch: "NONE", zone: null };
-        }
-        return row;
-      });
-      renderPrevRows();
-      renderComparePitchOptions();
-      renderZoneBoard();
-    }
-
-    function riskClass(value) {
-      if (value < -0.01) return "score-good";
-      if (value > 0.02) return "score-bad";
-      return "score-neutral";
-    }
-
-    function riskText(value) {
-      if (value < -0.04) return "투수에게 매우 유리";
-      if (value < -0.01) return "투수에게 유리";
-      if (value < 0.02) return "중립";
-      return "공격팀에게 유리";
-    }
-
-    function confidenceLabel(count) {
-      if (count >= 1000) return "높음";
-      if (count >= 100) return "보통";
-      return "낮음";
-    }
-
-    function sourceLabel(source) {
-      const labels = {
-        "pitcher+count+action+zone": "같은 투수·카운트·구종·위치 기준",
-        "pitcher+action+zone": "같은 투수·구종·위치 기준",
-        "count+action+zone": "같은 카운트·구종·위치 기준",
-        "action+zone": "같은 구종·위치 기준",
-        "action": "같은 구종 기준",
-        "global": "전체 평균 기준"
-      };
-      return labels[source] || source;
-    }
-
-    function getBestRecommendedZone() {
-      if (!lastRecommendData || !lastRecommendData.recommendations || lastRecommendData.recommendations.length === 0) return null;
-      return lastRecommendData.recommendations[0].zone;
-    }
-
-    function getActiveZone() {
-      if (activeTarget.type === "prev") return prevRows[activeTarget.index].zone;
-      if (activeTarget.type === "compare") return compareZone;
-      return null;
-    }
-
-    function zoneCellClass(zone) {
-      const classes = ["zone-cell"];
-      const bestZone = getBestRecommendedZone();
-      const activeZone = getActiveZone();
-      const isRecommended = bestZone === zone;
-      const isCompare = compareZone === zone && activeTarget.type === "compare";
-      const isActive = activeZone === zone;
-      if (isRecommended && isCompare) classes.push("both");
-      else {
-        if (isRecommended) classes.push("recommended");
-        if (isCompare) classes.push("compare");
+          box.appendChild(label);
+        });
       }
-      if (isActive) classes.push("active");
-      return classes.join(" ");
-    }
 
-    function zoneSubLabel(zone) {
-      if (["Z1","Z2","Z3","Z4","Z5","Z6","Z7","Z8","Z9"].includes(zone)) return "스트라이크";
-      return "볼";
-    }
+      function handleCandidateChange() {
+        const available = getAvailableCandidatePitches();
+        prevRows = prevRows.map((row) => {
+          if (row.pitch !== "NONE" && !available.includes(row.pitch)) {
+            return { pitch: "NONE", zone: null };
+          }
+          return row;
+        });
+        renderPrevRows();
+        renderComparePitchOptions();
+        renderZoneBoard();
+      }
 
-    function renderZoneBoard() {
-      const board = document.getElementById("zoneBoard");
-      board.innerHTML = "";
-      Object.entries(ZONE_LAYOUT_PITCHER_VIEW).forEach(([zone, cfg]) => {
-        const div = document.createElement("div");
-        div.className = [zoneCellClass(zone), cfg.type, cfg.corner || ""].join(" ").trim();
-        div.style.left = `${cfg.left}%`;
-        div.style.top = `${cfg.top}%`;
-        div.style.width = `${cfg.width}%`;
-        div.style.height = `${cfg.height}%`;
-        div.onclick = () => selectZone(zone);
-        div.innerHTML = `<div class="zone-label">${zone}</div><div class="zone-sub">${zoneSubLabel(zone)}</div>`;
-        board.appendChild(div);
-      });
-      updateActiveTargetText();
-    }
+      function riskClass(value) {
+        if (value < -0.01) return "score-good";
+        if (value > 0.02) return "score-bad";
+        return "score-neutral";
+      }
 
-    function updateActiveTargetText() {
-      const el = document.getElementById("activeTargetText");
-      if (activeTarget.type === "prev") el.textContent = `선택 대상: ${PREV_LABELS[activeTarget.index]} 위치`;
-      else if (activeTarget.type === "compare") el.textContent = "선택 대상: 직접 비교 위치";
-      else el.textContent = "선택 대상 없음";
-    }
+      function riskText(value) {
+        if (value < -0.04) return "투수에게 매우 유리";
+        if (value < -0.01) return "투수에게 유리";
+        if (value < 0.02) return "중립";
+        return "공격팀에게 유리";
+      }
 
-    function selectZone(zone) {
-      if (activeTarget.type === "prev") {
-        if (prevRows[activeTarget.index].pitch === "NONE") {
-          showMessage("이전 투구 없음 항목에는 위치를 지정할 수 없습니다.", "error");
+      function confidenceLabel(count) {
+        if (count >= 1000) return "높음";
+        if (count >= 100) return "보통";
+        return "낮음";
+      }
+
+      function sourceLabel(source) {
+        const labels = {
+          "pitcher+count+action+zone": "같은 투수·카운트·구종·위치 기준",
+          "pitcher+action+zone": "같은 투수·구종·위치 기준",
+          "count+action+zone": "같은 카운트·구종·위치 기준",
+          "action+zone": "같은 구종·위치 기준",
+          action: "같은 구종 기준",
+          global: "전체 평균 기준",
+        };
+        return labels[source] || source;
+      }
+
+      function getBestRecommendedZone() {
+        if (
+          !lastRecommendData ||
+          !lastRecommendData.recommendations ||
+          lastRecommendData.recommendations.length === 0
+        )
+          return null;
+        return lastRecommendData.recommendations[0].zone;
+      }
+
+      function getActiveZone() {
+        if (activeTarget.type === "prev")
+          return prevRows[activeTarget.index].zone;
+        if (activeTarget.type === "compare") return compareZone;
+        return null;
+      }
+
+      function zoneCellClass(zone) {
+        const classes = ["zone-cell"];
+        const bestZone = getBestRecommendedZone();
+        const activeZone = getActiveZone();
+        const isRecommended = bestZone === zone;
+        const isCompare =
+          compareZone === zone && activeTarget.type === "compare";
+        const isActive = activeZone === zone;
+        if (isRecommended && isCompare) classes.push("both");
+        else {
+          if (isRecommended) classes.push("recommended");
+          if (isCompare) classes.push("compare");
+        }
+        if (isActive) classes.push("active");
+        return classes.join(" ");
+      }
+
+      function zoneSubLabel(zone) {
+        if (
+          ["Z1", "Z2", "Z3", "Z4", "Z5", "Z6", "Z7", "Z8", "Z9"].includes(zone)
+        )
+          return "스트라이크";
+        return "볼";
+      }
+
+      function renderZoneBoard() {
+        const board = document.getElementById("zoneBoard");
+        board.innerHTML = "";
+        Object.entries(ZONE_LAYOUT_PITCHER_VIEW).forEach(([zone, cfg]) => {
+          const div = document.createElement("div");
+          div.className = [zoneCellClass(zone), cfg.type, cfg.corner || ""]
+            .join(" ")
+            .trim();
+          div.style.left = `${cfg.left}%`;
+          div.style.top = `${cfg.top}%`;
+          div.style.width = `${cfg.width}%`;
+          div.style.height = `${cfg.height}%`;
+          div.onclick = () => selectZone(zone);
+          div.innerHTML = `<div class="zone-label">${zone}</div><div class="zone-sub">${zoneSubLabel(zone)}</div>`;
+          board.appendChild(div);
+        });
+        updateActiveTargetText();
+      }
+
+      function updateActiveTargetText() {
+        const el = document.getElementById("activeTargetText");
+        if (activeTarget.type === "prev")
+          el.textContent = `선택 대상: ${PREV_LABELS[activeTarget.index]} 위치`;
+        else if (activeTarget.type === "compare")
+          el.textContent = "선택 대상: 직접 비교 위치";
+        else el.textContent = "선택 대상 없음";
+      }
+
+      function selectZone(zone) {
+        if (activeTarget.type === "prev") {
+          if (prevRows[activeTarget.index].pitch === "NONE") {
+            showMessage(
+              "이전 투구 없음 항목에는 위치를 지정할 수 없습니다.",
+              "error",
+            );
+            return;
+          }
+          prevRows[activeTarget.index].zone = zone;
+          renderPrevRows();
+        }
+        if (activeTarget.type === "compare") {
+          compareZone = zone;
+          document.getElementById("compareZoneChip").textContent = zone;
+        }
+        renderZoneBoard();
+      }
+
+      function setActivePrev(index) {
+        if (prevRows[index].pitch === "NONE") {
+          showMessage(
+            "이전 투구 없음으로 설정된 항목은 위치를 선택할 필요가 없습니다.",
+            "error",
+          );
           return;
         }
-        prevRows[activeTarget.index].zone = zone;
+        activeTarget = { type: "prev", index };
+        renderZoneBoard();
         renderPrevRows();
       }
-      if (activeTarget.type === "compare") {
-        compareZone = zone;
-        document.getElementById("compareZoneChip").textContent = zone;
+
+      function setActiveCompare() {
+        activeTarget = { type: "compare" };
+        renderZoneBoard();
       }
-      renderZoneBoard();
-    }
 
-    function setActivePrev(index) {
-      if (prevRows[index].pitch === "NONE") {
-        showMessage("이전 투구 없음으로 설정된 항목은 위치를 선택할 필요가 없습니다.", "error");
-        return;
-      }
-      activeTarget = { type: "prev", index };
-      renderZoneBoard();
-      renderPrevRows();
-    }
-
-    function setActiveCompare() {
-      activeTarget = { type: "compare" };
-      renderZoneBoard();
-    }
-
-    function renderPrevRows() {
-      const container = document.getElementById("prevPitchRows");
-      container.innerHTML = "";
-      prevRows.forEach((row, idx) => {
-        const div = document.createElement("div");
-        div.className = "pitch-row";
-        const isActive = activeTarget.type === "prev" && activeTarget.index === idx;
-        const isNone = row.pitch === "NONE";
-        div.innerHTML = `
+      function renderPrevRows() {
+        const container = document.getElementById("prevPitchRows");
+        container.innerHTML = "";
+        prevRows.forEach((row, idx) => {
+          const div = document.createElement("div");
+          div.className = "pitch-row";
+          const isActive =
+            activeTarget.type === "prev" && activeTarget.index === idx;
+          const isNone = row.pitch === "NONE";
+          div.innerHTML = `
           <div class="idx">${PREV_LABELS[idx]}</div>
           <select onchange="updatePrevPitch(${idx}, this.value)">${makePitchOptions(row.pitch, true)}</select>
           <div class="zone-chip">${isNone ? "-" : row.zone}</div>
-          <button class="${isActive ? "btn-primary" : "btn-ghost"}" onclick="setActivePrev(${idx})" ${isNone ? "disabled" : ""}>위치 선택</button>
+          <button class="${isActive ? "btn-primary" : "btn-ghost"}" onclick="setActivePrev(${idx})" ${isNone ? "disabled" : ""}>위치 <br>5선택</button>
         `;
-        container.appendChild(div);
-      });
-    }
+          container.appendChild(div);
+        });
+      }
 
-    function updatePrevPitch(index, value) {
-      prevRows[index].pitch = value;
-      if (value === "NONE") prevRows[index].zone = null;
-      else if (!prevRows[index].zone) prevRows[index].zone = "Z5";
-      renderPrevRows();
-      renderZoneBoard();
-    }
-
-    function renderComparePitchOptions() {
-      const select = document.getElementById("compare_pitch_type");
-      const options = getAvailableCandidatePitches();
-      const prevValue = select.value;
-      select.innerHTML = options.map(p => `<option value="${p}">${pitchLabel(p)} (${pitchEnglish(p)})</option>`).join("");
-      if (options.includes(prevValue)) select.value = prevValue;
-      else select.value = options.includes("SL") ? "SL" : options[0];
-    }
-
-    function updateHandVisuals() {
-      const stand = document.getElementById("stand").value;
-      const pThrows = document.getElementById("p_throws").value;
-      document.getElementById("leftBatterSlot").classList.toggle("active", stand === "L");
-      document.getElementById("rightBatterSlot").classList.toggle("active", stand === "R");
-      document.getElementById("leftBatterSvg").innerHTML = createBatterSvg("L");
-      document.getElementById("rightBatterSvg").innerHTML = createBatterSvg("R");
-      document.getElementById("leftPitcherSvg").innerHTML = createPitcherSvg("L");
-      document.getElementById("rightPitcherSvg").innerHTML = createPitcherSvg("R");
-      document.getElementById("leftPitcherSlot").classList.toggle("active", pThrows === "L");
-      document.getElementById("rightPitcherSlot").classList.toggle("active", pThrows === "R");
-      document.getElementById("pitcherDesc").textContent = pThrows === "L" ? "좌투수" : "우투수";
-    }
-
-    function buildPayload() {
-      const candidateInput = getCandidatePitchTypes();
-      const validPrevRows = prevRows.filter(row => row.pitch && row.pitch !== "NONE" && row.zone);
-      return {
-        pitcher: Number(document.getElementById("pitcher").value),
-        batter: null,
-        balls: Number(document.getElementById("balls").value),
-        strikes: Number(document.getElementById("strikes").value),
-        outs_when_up: Number(document.getElementById("outs_when_up").value),
-        inning: Number(document.getElementById("inning").value),
-        runner_1b: Number(document.getElementById("runner_1b").value),
-        runner_2b: Number(document.getElementById("runner_2b").value),
-        runner_3b: Number(document.getElementById("runner_3b").value),
-        stand: document.getElementById("stand").value,
-        p_throws: document.getElementById("p_throws").value,
-        prev_pitch_types: validPrevRows.map(x => x.pitch),
-        prev_zones: validPrevRows.map(x => x.zone),
-        candidate_pitch_types: candidateInput.length > 0 ? candidateInput : null,
-        top_n: Number(document.getElementById("top_n").value)
-      };
-    }
-
-    async function recommend() {
-      clearMessage();
-      const payload = buildPayload();
-      try {
-        const res = await fetch("/recommend", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        const data = await res.json();
-        if (!res.ok) { showMessage(JSON.stringify(data), "error"); return; }
-        lastRecommendData = data;
-        renderLstmTable(data.lstm_top3 || []);
-        renderRecommendationTable(data.recommendations || []);
+      function updatePrevPitch(index, value) {
+        prevRows[index].pitch = value;
+        if (value === "NONE") prevRows[index].zone = null;
+        else if (!prevRows[index].zone) prevRows[index].zone = "Z5";
+        renderPrevRows();
         renderZoneBoard();
-        document.getElementById("rawJson").textContent = JSON.stringify(data, null, 2);
-        showMessage("추천 결과를 생성했습니다.", "ok");
-      } catch (err) { showMessage(err.toString(), "error"); }
-    }
+      }
 
-    async function compareAction() {
-      clearMessage();
-      const payload = buildPayload();
-      payload.action_pitch_type = document.getElementById("compare_pitch_type").value;
-      payload.action_zone = compareZone;
-      try {
-        const res = await fetch("/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-        const data = await res.json();
-        if (!res.ok || data.error) { showMessage(JSON.stringify(data), "error"); return; }
-        renderComparison(data);
-        renderZoneBoard();
-        document.getElementById("rawJson").textContent = JSON.stringify(data, null, 2);
-        showMessage("직접 선택 비교를 완료했습니다.", "ok");
-      } catch (err) { showMessage(err.toString(), "error"); }
-    }
+      function renderComparePitchOptions() {
+        const select = document.getElementById("compare_pitch_type");
+        const options = getAvailableCandidatePitches();
+        const prevValue = select.value;
+        select.innerHTML = options
+          .map(
+            (p) =>
+              `<option value="${p}">${pitchLabel(p)} (${pitchEnglish(p)})</option>`,
+          )
+          .join("");
+        if (options.includes(prevValue)) select.value = prevValue;
+        else select.value = options.includes("SL") ? "SL" : options[0];
+      }
 
-    function renderLstmTable(items) {
-      const tbody = document.querySelector("#lstmTable tbody");
-      tbody.innerHTML = "";
-      if (!items.length) { tbody.innerHTML = `<tr><td colspan="3">결과 없음</td></tr>`; return; }
-      items.forEach((item, idx) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${idx + 1}</td><td><span class="pitch-pill">${pitchLabel(item.pitch_type)}</span><span class="code-sub">${pitchEnglish(item.pitch_type)}</span></td><td>${(item.probability * 100).toFixed(2)}%</td>`;
-        tbody.appendChild(tr);
-      });
-    }
+      function updateHandVisuals() {
+        const stand = document.getElementById("stand").value;
+        const pThrows = document.getElementById("p_throws").value;
+        document
+          .getElementById("leftBatterSlot")
+          .classList.toggle("active", stand === "L");
+        document
+          .getElementById("rightBatterSlot")
+          .classList.toggle("active", stand === "R");
+        document.getElementById("leftBatterSvg").innerHTML =
+          createBatterSvg("L");
+        document.getElementById("rightBatterSvg").innerHTML =
+          createBatterSvg("R");
+        document.getElementById("leftPitcherSvg").innerHTML =
+          createPitcherSvg("L");
+        document.getElementById("rightPitcherSvg").innerHTML =
+          createPitcherSvg("R");
+        document
+          .getElementById("leftPitcherSlot")
+          .classList.toggle("active", pThrows === "L");
+        document
+          .getElementById("rightPitcherSlot")
+          .classList.toggle("active", pThrows === "R");
+        document.getElementById("pitcherDesc").textContent =
+          pThrows === "L" ? "좌투수" : "우투수";
+      }
 
-    function renderRecommendationTable(items) {
-      const tbody = document.querySelector("#recTable tbody");
-      tbody.innerHTML = "";
-      if (!items.length) { tbody.innerHTML = `<tr><td colspan="6">결과 없음</td></tr>`; return; }
-      items.forEach((item, idx) => {
-        const tr = document.createElement("tr");
-        const cls = riskClass(item.pred_delta_run_exp);
-        tr.innerHTML = `
+      function buildPayload() {
+        const candidateInput = getCandidatePitchTypes();
+        const validPrevRows = prevRows.filter(
+          (row) => row.pitch && row.pitch !== "NONE" && row.zone,
+        );
+        return {
+          pitcher: Number(document.getElementById("pitcher").value),
+          batter: null,
+          balls: Number(document.getElementById("balls").value),
+          strikes: Number(document.getElementById("strikes").value),
+          outs_when_up: Number(document.getElementById("outs_when_up").value),
+          inning: Number(document.getElementById("inning").value),
+          runner_1b: Number(document.getElementById("runner_1b").value),
+          runner_2b: Number(document.getElementById("runner_2b").value),
+          runner_3b: Number(document.getElementById("runner_3b").value),
+          stand: document.getElementById("stand").value,
+          p_throws: document.getElementById("p_throws").value,
+          prev_pitch_types: validPrevRows.map((x) => x.pitch),
+          prev_zones: validPrevRows.map((x) => x.zone),
+          candidate_pitch_types:
+            candidateInput.length > 0 ? candidateInput : null,
+          top_n: Number(document.getElementById("top_n").value),
+        };
+      }
+
+      async function recommend() {
+        clearMessage();
+        const payload = buildPayload();
+        try {
+          const res = await fetch("/recommend", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            showMessage(JSON.stringify(data), "error");
+            return;
+          }
+          lastRecommendData = data;
+          renderLstmTable(data.lstm_top3 || []);
+          renderRecommendationTable(data.recommendations || []);
+          renderZoneBoard();
+          document.getElementById("rawJson").textContent = JSON.stringify(
+            data,
+            null,
+            2,
+          );
+          showMessage("추천 결과를 생성했습니다.", "ok");
+        } catch (err) {
+          showMessage(err.toString(), "error");
+        }
+      }
+
+      async function compareAction() {
+        clearMessage();
+        const payload = buildPayload();
+        payload.action_pitch_type =
+          document.getElementById("compare_pitch_type").value;
+        payload.action_zone = compareZone;
+        try {
+          const res = await fetch("/compare", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          if (!res.ok || data.error) {
+            showMessage(JSON.stringify(data), "error");
+            return;
+          }
+          renderComparison(data);
+          renderZoneBoard();
+          document.getElementById("rawJson").textContent = JSON.stringify(
+            data,
+            null,
+            2,
+          );
+          showMessage("직접 선택 비교를 완료했습니다.", "ok");
+        } catch (err) {
+          showMessage(err.toString(), "error");
+        }
+      }
+
+      function renderLstmTable(items) {
+        const tbody = document.querySelector("#lstmTable tbody");
+        tbody.innerHTML = "";
+        if (!items.length) {
+          tbody.innerHTML = `<tr><td colspan="3">결과 없음</td></tr>`;
+          return;
+        }
+        items.forEach((item, idx) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${idx + 1}</td><td><span class="pitch-pill">${pitchLabel(item.pitch_type)}</span><span class="code-sub">${pitchEnglish(item.pitch_type)}</span></td><td>${(item.probability * 100).toFixed(2)}%</td>`;
+          tbody.appendChild(tr);
+        });
+      }
+
+      function renderRecommendationTable(items) {
+        const tbody = document.querySelector("#recTable tbody");
+        tbody.innerHTML = "";
+        if (!items.length) {
+          tbody.innerHTML = `<tr><td colspan="6">결과 없음</td></tr>`;
+          return;
+        }
+        items.forEach((item, idx) => {
+          const tr = document.createElement("tr");
+          const cls = riskClass(item.pred_delta_run_exp);
+          tr.innerHTML = `
           <td>${idx + 1}</td>
           <td><span class="pitch-pill">${pitchLabel(item.pitch_type)}</span><span class="code-sub">${pitchEnglish(item.pitch_type)}</span></td>
           <td><b>${item.zone}</b></td>
@@ -1151,21 +1726,26 @@
           <td>${sourceLabel(item.source)}</td>
           <td>${item.source_count.toLocaleString()}<br/><small>신뢰도 ${confidenceLabel(item.source_count)}</small></td>
         `;
-        tbody.appendChild(tr);
-      });
-    }
+          tbody.appendChild(tr);
+        });
+      }
 
-    function renderComparison(data) {
-      const box = document.getElementById("compareResult");
-      box.style.display = "grid";
-      const selected = data.selected_action;
-      const best = data.best_recommendation;
-      const cmp = data.comparison;
-      if (!best) { box.innerHTML = `<div class="mini-card">모델 추천 결과가 없습니다.</div>`; return; }
-      const selectedCls = riskClass(selected.pred_delta_run_exp);
-      const bestCls = riskClass(best.pred_delta_run_exp);
-      const message = cmp.is_selected_better_or_equal ? "직접 선택이 모델 추천과 같거나 더 유리합니다." : "현재 모델 기준으로는 모델 추천이 더 유리합니다.";
-      box.innerHTML = `
+      function renderComparison(data) {
+        const box = document.getElementById("compareResult");
+        box.style.display = "grid";
+        const selected = data.selected_action;
+        const best = data.best_recommendation;
+        const cmp = data.comparison;
+        if (!best) {
+          box.innerHTML = `<div class="mini-card">모델 추천 결과가 없습니다.</div>`;
+          return;
+        }
+        const selectedCls = riskClass(selected.pred_delta_run_exp);
+        const bestCls = riskClass(best.pred_delta_run_exp);
+        const message = cmp.is_selected_better_or_equal
+          ? "직접 선택이 모델 추천과 같거나 더 유리합니다."
+          : "현재 모델 기준으로는 모델 추천이 더 유리합니다.";
+        box.innerHTML = `
         <div class="mini-card">
           <h4>직접 선택</h4>
           <div><span class="pitch-pill">${pitchLabel(selected.pitch_type)}</span><span class="code-sub">${pitchEnglish(selected.pitch_type)}</span> / <b>${selected.zone}</b></div>
@@ -1184,52 +1764,58 @@
           <div style="margin-top:6px;color:#475569;">${message}</div>
         </div>
       `;
-    }
-
-    async function loadHealth() {
-      try {
-        const res = await fetch("/health");
-        const data = await res.json();
-        const pitchCount = (data.supported_pitch_types || []).length;
-        document.getElementById("healthText").innerHTML = `서버 정상 작동<br/>추천 엔진 준비 완료<br/>지원 구종 ${pitchCount}종`;
-      } catch (err) {
-        document.getElementById("healthText").textContent = "서버 상태 확인 실패";
       }
-    }
 
-    function resetDemo() {
-      document.getElementById("balls").value = "1";
-      document.getElementById("strikes").value = "2";
-      document.getElementById("outs_when_up").value = "1";
-      document.getElementById("inning").value = "7";
-      document.getElementById("runner_1b").value = "0";
-      document.getElementById("runner_2b").value = "1";
-      document.getElementById("runner_3b").value = "0";
-      document.getElementById("stand").value = "R";
-      document.getElementById("p_throws").value = "R";
-      document.getElementById("top_n").value = "5";
-      prevRows = JSON.parse(JSON.stringify(DEFAULT_PREV_ROWS));
-      activeTarget = { type: "prev", index: 0 };
-      compareZone = "Z13";
-      document.getElementById("compareZoneChip").textContent = compareZone;
-      renderCandidatePitchChecks();
-      renderPrevRows();
-      renderComparePitchOptions();
-      renderZoneBoard();
-      updateHandVisuals();
-      clearMessage();
-    }
+      async function loadHealth() {
+        try {
+          const res = await fetch("/health");
+          const data = await res.json();
+          const pitchCount = (data.supported_pitch_types || []).length;
+          document.getElementById("healthText").innerHTML =
+            `서버 정상 작동<br/>추천 엔진 준비 완료<br/>지원 구종 ${pitchCount}종`;
+        } catch (err) {
+          document.getElementById("healthText").textContent =
+            "서버 상태 확인 실패";
+        }
+      }
 
-    window.addEventListener("DOMContentLoaded", () => {
-      renderCandidatePitchChecks();
-      renderPrevRows();
-      renderComparePitchOptions();
-      renderZoneBoard();
-      updateHandVisuals();
-      loadHealth();
-      document.getElementById("stand").addEventListener("change", updateHandVisuals);
-      document.getElementById("p_throws").addEventListener("change", updateHandVisuals);
-    });
-  </script>
-</body>
+      function resetDemo() {
+        document.getElementById("balls").value = "1";
+        document.getElementById("strikes").value = "2";
+        document.getElementById("outs_when_up").value = "1";
+        document.getElementById("inning").value = "7";
+        document.getElementById("runner_1b").value = "0";
+        document.getElementById("runner_2b").value = "1";
+        document.getElementById("runner_3b").value = "0";
+        document.getElementById("stand").value = "R";
+        document.getElementById("p_throws").value = "R";
+        document.getElementById("top_n").value = "5";
+        prevRows = JSON.parse(JSON.stringify(DEFAULT_PREV_ROWS));
+        activeTarget = { type: "prev", index: 0 };
+        compareZone = "Z13";
+        document.getElementById("compareZoneChip").textContent = compareZone;
+        renderCandidatePitchChecks();
+        renderPrevRows();
+        renderComparePitchOptions();
+        renderZoneBoard();
+        updateHandVisuals();
+        clearMessage();
+      }
+
+      window.addEventListener("DOMContentLoaded", () => {
+        renderCandidatePitchChecks();
+        renderPrevRows();
+        renderComparePitchOptions();
+        renderZoneBoard();
+        updateHandVisuals();
+        loadHealth();
+        document
+          .getElementById("stand")
+          .addEventListener("change", updateHandVisuals);
+        document
+          .getElementById("p_throws")
+          .addEventListener("change", updateHandVisuals);
+      });
+    </script>
+  </body>
 </html>
